@@ -1,0 +1,27 @@
+# Zależności
+node_modules/
+
+# Zmienne środowiskowe
+.env
+.env.local
+
+# Pliki buildów
+dist/
+dist-ssr/
+build/
+
+# Logi
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Edytory i system operacyjny
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
