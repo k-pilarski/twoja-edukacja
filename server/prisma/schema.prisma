@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- ENUMY (Słowniki) ---
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum ContentType {
+  VIDEO
+  TEXT
+  QUIZ
+  EXERCISE
+}
+
+enum PurchaseStatus {
+  PAID
+  PENDING
+  CANCELLED
+}
+
+// --- MODELE ---
+
+model User {
+  id           Int           @id @default(autoincrement())
+  firstName    String        @map("imie")
+  lastName     String        @map("nazwisko")
+  email        String        @unique
+  password     String        @map("haslo")
+  role         Role          @default(STUDENT)
+  isActive     Boolean       @default(true) @map("czy_aktywny")
+  createdAt    DateTime      @default(now()) @map("data_rejestracji")
+
+  // Relacje
+  purchases    Purchase[]
+  progress     Progress[]
+  reviews      Review[]
+  certificates Certificate[]
+  instructor   Instructor?   // Opcjonalne, jeśli użytkownik jest instruktorem
+
+  @@map("uzytkownicy")
+}
+
+model Instructor {
+  id               Int      @id @default(autoincrement())
+  bio              String   @db.Text
+  professionalTitle String   @map("tytul_zawodowy")
+  
+  // Relacja z User (instruktor to konkretny użytkownik)
+  userId           Int      @unique @map("id_uzytkownika")
+  user             User     @relation(fields: [userId], references: [id])
+  
+  courses          Course[]
+
+  @@map("instruktorzy")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @map("nazwa")
+  description String?  @map("opis")
+  courses     Course[]
+
+  @@map("kategorie")
+}
+
+model Course {
+  id            Int      @id @default(autoincrement())
+  title         String   @map("tytul")
+  description   String   @db.Text @map("opis")
+  price         Decimal  @db.Decimal(8, 2) @map("cena")
+  requirements  String?  @db.Text @map("wymagania")
+  publishDate   DateTime @default(now()) @map("data_publikacji")
+
+  // Klucze obce
+  instructorId  Int      @map("id_instruktora")
+  instructor    Instructor @relation(fields: [instructorId], references: [id])
+  
+  categoryId    Int      @map("id_kategorii")
+  category      Category @relation(fields: [categoryId], references: [id])
+
+  // Relacje
+  lessons       Lesson[]
+  purchases     Purchase[]
+  reviews       Review[]
+  certificates Certificate[]
+
+  @@map("kursy")
+}
+
+model Lesson {
+  id              Int         @id @default(autoincrement())
+  title           String      @map("tytul")
+  contentType     ContentType @map("typ_tresci")
+  durationMin     Int         @map("czas_trwania_min")
+  order           Int         @map("kolejnosc")
+  contentPath     String      @map("sciezka_do_tresci")
+
+  courseId        Int         @map("id_kursu")
+  course          Course      @relation(fields: [courseId], references: [id])
+
+  progress        Progress[]
+
+  @@map("lekcje")
+}
+
+model Purchase {
+  id             Int            @id @default(autoincrement())
+  purchaseDate   DateTime       @default(now()) @map("data_zakupu")
+  amountPaid     Decimal        @db.Decimal(8, 2) @map("kwota_zaplacona")
+  status         PurchaseStatus @default(PENDING) @map("status_platnosci")
+
+  userId         Int            @map("id_uzytkownika")
+  user           User           @relation(fields: [userId], references: [id])
+
+  courseId       Int            @map("id_kursu")
+  course         Course         @relation(fields: [courseId], references: [id])
+
+  notifications  Notification[]
+
+  @@map("zakupy")
+}
+
+model Progress {
+  id                Int      @id @default(autoincrement())
+  completionDate    DateTime? @map("data_ukonczenia")
+  completionPercent Int      @default(0) @map("procent_ukonczenia")
+
+  userId            Int      @map("id_uzytkownika")
+  user              User     @relation(fields: [userId], references: [id])
+
+  lessonId          Int      @map("id_lekcji")
+  lesson            Lesson   @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId]) // Zabezpieczenie przed duplikatami postępu
+  @@map("postepy")
+}
+
+model Review {
+  id           Int      @id @default(autoincrement())
+  rating       Int      @map("ocena")
+  comment      String?  @db.Text @map("komentarz")
+  reviewDate   DateTime @default(now()) @map("data_opinii")
+  isPublished  Boolean  @default(false) @map("czy_opublikowana")
+
+  userId       Int      @map("id_uzytkownika")
+  user         User     @relation(fields: [userId], references: [id])
+
+  courseId     Int      @map("id_kursu")
+  course       Course   @relation(fields: [courseId], references: [id])
+
+  @@map("opinie")
+}
+
+model Notification {
+  id           Int      @id @default(autoincrement())
+  type         String   @map("typ_powiadomienia")
+  title        String   @map("tytul")
+  content      String   @map("tresc")
+  sentAt       DateTime @default(now()) @map("data_wyslania")
+  isRead       Boolean  @default(false) @map("czy_przeczytane")
+
+  purchaseId   Int      @map("id_zakupu")
+  purchase     Purchase @relation(fields: [purchaseId], references: [id])
+
+  @@map("powiadomienia")
+}
+
+model Certificate {
+  id           Int      @id @default(autoincrement())
+  uniqueCode   String   @unique @map("unikalny_kod")
+  issuedAt     DateTime @default(now()) @map("data_wydania")
+
+  userId       Int      @map("id_uzytkownika")
+  user         User     @relation(fields: [userId], references: [id])
+
+  courseId     Int      @map("id_kursu")
+  course       Course   @relation(fields: [courseId], references: [id])
+
+  @@map("certyfikaty")
+}
