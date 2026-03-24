@@ -1,5 +1,7 @@
+import 'dotenv/config';
 import express, { type Express, type Request, type Response } from 'express';
 import { prisma } from './lib/prisma.js';
+import authRoutes from './routes/auth.routes.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
@@ -19,6 +21,8 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
+app.use('/api/auth', authRoutes); 
+
 app.listen(PORT, () => {
-  console.log(`Serwer uruchomiony na porcie ${PORT}`);
+  console.log(`🚀 Serwer uruchomiony na porcie ${PORT}`);
 });
