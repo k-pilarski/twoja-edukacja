@@ -32,42 +32,42 @@ enum PurchaseStatus {
 // --- MODELE ---
 
 model User {
-  id           Int           @id @default(autoincrement())
-  firstName    String        @map("imie")
-  lastName     String        @map("nazwisko")
-  email        String        @unique
-  password     String        @map("haslo")
-  role         Role          @default(STUDENT)
-  isActive     Boolean       @default(true) @map("czy_aktywny")
-  createdAt    DateTime      @default(now()) @map("data_rejestracji")
+  id                Int           @id @default(autoincrement())
+  firstName         String        @map("imie")
+  lastName          String        @map("nazwisko")
+  email             String        @unique
+  password          String        @map("haslo")
+  role              Role          @default(STUDENT)
+  isActive          Boolean       @default(true) @map("czy_aktywny")
+  createdAt         DateTime      @default(now()) @map("data_rejestracji")
 
   // Relacje
-  purchases    Purchase[]
-  progress     Progress[]
-  reviews      Review[]
-  certificates Certificate[]
-  instructor   Instructor?   // Opcjonalne, jeśli użytkownik jest instruktorem
+  purchases         Purchase[]
+  progress          Progress[]
+  reviews           Review[]
+  certificates      Certificate[]
+  instructorProfile Instructor?   // Relacja 1:1 z profilem instruktora
 
   @@map("uzytkownicy")
 }
 
 model Instructor {
-  id               Int      @id @default(autoincrement())
-  bio              String   @db.Text
+  id                Int      @id @default(autoincrement())
+  bio               String   @db.Text
   professionalTitle String   @map("tytul_zawodowy")
   
-  // Relacja z User (instruktor to konkretny użytkownik)
-  userId           Int      @unique @map("id_uzytkownika")
-  user             User     @relation(fields: [userId], references: [id])
+  // Relacja z User
+  userId            Int      @unique @map("id_uzytkownika")
+  user              User     @relation(fields: [userId], references: [id])
   
-  courses          Course[]
+  courses           Course[]
 
   @@map("instruktorzy")
 }
 
 model Category {
   id          Int      @id @default(autoincrement())
-  name        String   @map("nazwa")
+  name        String   @unique @map("nazwa")
   description String?  @map("opis")
   courses     Course[]
 
@@ -75,117 +75,131 @@ model Category {
 }
 
 model Course {
-  id            Int      @id @default(autoincrement())
-  title         String   @map("tytul")
-  description   String   @db.Text @map("opis")
-  price         Decimal  @db.Decimal(8, 2) @map("cena")
-  requirements  String?  @db.Text @map("wymagania")
-  publishDate   DateTime @default(now()) @map("data_publikacji")
+  id           Int      @id @default(autoincrement())
+  title        String   @map("tytul")
+  description  String   @db.Text @map("opis")
+  price        Decimal  @db.Decimal(8, 2) @map("cena")
+  thumbnailUrl String?  @map("miniatura_url")
+  publishDate  DateTime @default(now()) @map("data_publikacji")
+  isPublished  Boolean  @default(false) @map("czy_opublikowany")
 
   // Klucze obce
-  instructorId  Int      @map("id_instruktora")
-  instructor    Instructor @relation(fields: [instructorId], references: [id])
+  instructorId Int      @map("id_instruktora")
+  instructor   Instructor @relation(fields: [instructorId], references: [id])
   
-  categoryId    Int      @map("id_kategorii")
-  category      Category @relation(fields: [categoryId], references: [id])
+  categoryId   Int      @map("id_kategorii")
+  category     Category @relation(fields: [categoryId], references: [id])
 
   // Relacje
-  lessons       Lesson[]
-  purchases     Purchase[]
-  reviews       Review[]
+  lessons      Lesson[]
+  requirements Requirement[] // Relacja dla logiki wymagań kursu (Issue #15)
+  purchases    Purchase[]
+  reviews      Review[]
   certificates Certificate[]
 
   @@map("kursy")
 }
 
+model Requirement {
+  id       Int    @id @default(autoincrement())
+  text     String @map("tresc_wymagania")
+  
+  courseId Int    @map("id_kursu")
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("wymagania_kursu")
+}
+
 model Lesson {
-  id              Int         @id @default(autoincrement())
-  title           String      @map("tytul")
-  contentType     ContentType @map("typ_tresci")
-  durationMin     Int         @map("czas_trwania_min")
-  order           Int         @map("kolejnosc")
-  contentPath     String      @map("sciezka_do_tresci")
+  id           Int         @id @default(autoincrement())
+  title        String      @map("tytul")
+  contentType  ContentType @map("typ_tresci")
+  contentPath  String?     @map("sciezka_do_tresci") // Dla tekstu lub zasobów
+  videoUrl     String?     @map("url_wideo")         // Dla odtwarzacza wideo
+  durationMin  Int         @map("czas_trwania_min")
+  order        Int         @map("kolejnosc")
+  isFree       Boolean     @default(false) @map("czy_darmowa")
 
-  courseId        Int         @map("id_kursu")
-  course          Course      @relation(fields: [courseId], references: [id])
+  courseId     Int         @map("id_kursu")
+  course       Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
-  progress        Progress[]
+  progress     Progress[]
 
   @@map("lekcje")
 }
 
 model Purchase {
-  id             Int            @id @default(autoincrement())
-  purchaseDate   DateTime       @default(now()) @map("data_zakupu")
-  amountPaid     Decimal        @db.Decimal(8, 2) @map("kwota_zaplacona")
-  status         PurchaseStatus @default(PENDING) @map("status_platnosci")
+  id           Int            @id @default(autoincrement())
+  purchaseDate DateTime       @default(now()) @map("data_zakupu")
+  amountPaid   Decimal        @db.Decimal(8, 2) @map("kwota_zaplacona")
+  status       PurchaseStatus @default(PENDING) @map("status_platnosci")
 
-  userId         Int            @map("id_uzytkownika")
-  user           User           @relation(fields: [userId], references: [id])
+  userId       Int            @map("id_uzytkownika")
+  user         User           @relation(fields: [userId], references: [id])
 
-  courseId       Int            @map("id_kursu")
-  course         Course         @relation(fields: [courseId], references: [id])
+  courseId     Int            @map("id_kursu")
+  course       Course         @relation(fields: [courseId], references: [id])
 
-  notifications  Notification[]
+  notifications Notification[]
 
   @@map("zakupy")
 }
 
 model Progress {
-  id                Int      @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   completionDate    DateTime? @map("data_ukonczenia")
-  completionPercent Int      @default(0) @map("procent_ukonczenia")
+  isCompleted       Boolean   @default(false) @map("czy_ukonczone")
 
-  userId            Int      @map("id_uzytkownika")
-  user              User     @relation(fields: [userId], references: [id])
+  userId            Int       @map("id_uzytkownika")
+  user              User      @relation(fields: [userId], references: [id])
 
-  lessonId          Int      @map("id_lekcji")
-  lesson            Lesson   @relation(fields: [lessonId], references: [id])
+  lessonId          Int       @map("id_lekcji")
+  lesson            Lesson    @relation(fields: [lessonId], references: [id])
 
-  @@unique([userId, lessonId]) // Zabezpieczenie przed duplikatami postępu
+  @@unique([userId, lessonId])
   @@map("postepy")
 }
 
 model Review {
-  id           Int      @id @default(autoincrement())
-  rating       Int      @map("ocena")
-  comment      String?  @db.Text @map("komentarz")
-  reviewDate   DateTime @default(now()) @map("data_opinii")
-  isPublished  Boolean  @default(false) @map("czy_opublikowana")
+  id          Int      @id @default(autoincrement())
+  rating      Int      @map("ocena")
+  comment     String?  @db.Text @map("komentarz")
+  reviewDate  DateTime @default(now()) @map("data_opinii")
+  isPublished Boolean  @default(false) @map("czy_opublikowana")
 
-  userId       Int      @map("id_uzytkownika")
-  user         User     @relation(fields: [userId], references: [id])
+  userId      Int      @map("id_uzytkownika")
+  user        User     @relation(fields: [userId], references: [id])
 
-  courseId     Int      @map("id_kursu")
-  course       Course   @relation(fields: [courseId], references: [id])
+  courseId    Int      @map("id_kursu")
+  course      Course   @relation(fields: [courseId], references: [id])
 
   @@map("opinie")
 }
 
 model Notification {
-  id           Int      @id @default(autoincrement())
-  type         String   @map("typ_powiadomienia")
-  title        String   @map("tytul")
-  content      String   @map("tresc")
-  sentAt       DateTime @default(now()) @map("data_wyslania")
-  isRead       Boolean  @default(false) @map("czy_przeczytane")
+  id         Int      @id @default(autoincrement())
+  type       String   @map("typ_powiadomienia")
+  title      String   @map("tytul")
+  content    String   @map("tresc")
+  sentAt     DateTime @default(now()) @map("data_wyslania")
+  isRead     Boolean  @default(false) @map("czy_przeczytane")
 
-  purchaseId   Int      @map("id_zakupu")
-  purchase     Purchase @relation(fields: [purchaseId], references: [id])
+  purchaseId Int      @map("id_zakupu")
+  purchase   Purchase @relation(fields: [purchaseId], references: [id])
 
   @@map("powiadomienia")
 }
 
 model Certificate {
-  id           Int      @id @default(autoincrement())
-  uniqueCode   String   @unique @map("unikalny_kod")
-  issuedAt     DateTime @default(now()) @map("data_wydania")
+  id         Int      @id @default(autoincrement())
+  uniqueCode String   @unique @map("unikalny_kod")
+  issuedAt   DateTime @default(now()) @map("data_wydania")
 
-  userId       Int      @map("id_uzytkownika")
-  user         User     @relation(fields: [userId], references: [id])
+  userId     Int      @map("id_uzytkownika")
+  user       User     @relation(fields: [userId], references: [id])
 
-  courseId     Int      @map("id_kursu")
-  course       Course   @relation(fields: [courseId], references: [id])
+  courseId   Int      @map("id_kursu")
+  course     Course   @relation(fields: [courseId], references: [id])
 
   @@map("certyfikaty")
 }
