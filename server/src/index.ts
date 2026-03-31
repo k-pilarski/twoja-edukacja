@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { type Express, type Request, type Response } from 'express';
 import { prisma } from './lib/prisma.js';
 import authRoutes from './routes/auth.routes.js';
+import cors from 'cors';
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
@@ -20,6 +21,8 @@ app.get('/api/test-db', async (req, res) => {
     res.status(500).json({ status: 'db_error', error: err });
   }
 });
+
+app.use(cors({ origin: 'http://localhost:5173' }));
 
 app.use('/api/auth', authRoutes); 
 
