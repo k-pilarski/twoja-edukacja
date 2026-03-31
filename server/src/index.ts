@@ -3,6 +3,7 @@ import express, { type Express, type Request, type Response } from 'express';
 import { prisma } from './lib/prisma.js';
 import authRoutes from './routes/auth.routes.js';
 import cors from 'cors';
+import courseRoutes from './routes/course.routes.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
@@ -25,6 +26,7 @@ app.get('/api/test-db', async (req, res) => {
 app.use(cors({ origin: 'http://localhost:5173' }));
 
 app.use('/api/auth', authRoutes); 
+app.use('/api/courses', courseRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Serwer uruchomiony na porcie ${PORT}`);
