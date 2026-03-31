@@ -2,13 +2,16 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 
 interface User {
   id: number;
+  firstName: string;
+  lastName: string;
   email: string;
-  role: string;
+  role: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
 }
 
 interface AuthContextType {
   token: string | null;
   user: User | null;
+  isLoading: boolean;
   login: (token: string) => void;
   logout: () => void;
 }
@@ -18,15 +21,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('jwt_token'));
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUser = async (currentToken: string) => {
+  const fetchMe = async (currentToken: string) => {
     try {
       const response = await fetch('http://localhost:5000/api/auth/me', {
         headers: {
-          Authorization: `Bearer ${currentToken}`,
-        },
+          'Authorization': `Bearer ${currentToken}`
+        }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
@@ -34,15 +38,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout();
       }
     } catch (error) {
-      console.error('Błąd pobierania danych użytkownika', error);
+      console.error("Błąd pobierania danych profilu:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     if (token) {
-      fetchUser(token);
+      fetchMe(token);
     } else {
-      setUser(null);
+      setIsLoading(false);
     }
   }, [token]);
 
@@ -58,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, login, logout }}>
+    <AuthContext.Provider value={{ token, user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
