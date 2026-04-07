@@ -31,7 +31,20 @@ export const Login = () => {
       }
 
       login(data.token);
-      navigate('/dashboard');
+
+      try {
+        const payload = JSON.parse(atob(data.token.split('.')[1]));
+        const userRole = payload.role;
+
+        if (userRole === 'INSTRUCTOR' || userRole === 'ADMIN') {
+          navigate('/dashboard');
+        } else {
+          navigate('/');
+        }
+      } catch (e) {
+        navigate('/');
+      }
+
     } catch (err: any) {
       setError(err.message || 'Błąd połączenia z serwerem.');
     } finally {
@@ -49,14 +62,36 @@ export const Login = () => {
           {error && <div className="text-red-600 text-sm text-center bg-red-50 p-2 rounded border border-red-200">{error}</div>}
           <div className="rounded-md shadow-sm space-y-4">
             <div>
-              <input name="email" type="email" required className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Adres e-mail" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoading} />
+              <input 
+                name="email" 
+                type="email" 
+                required 
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                placeholder="Adres e-mail" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                disabled={isLoading} 
+              />
             </div>
             <div>
-              <input name="password" type="password" required className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Hasło" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} />
+              <input 
+                name="password" 
+                type="password" 
+                required 
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                placeholder="Hasło" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                disabled={isLoading} 
+              />
             </div>
           </div>
           <div>
-            <button type="submit" disabled={isLoading} className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300">
+            <button 
+              type="submit" 
+              disabled={isLoading} 
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
+            >
               {isLoading ? 'Logowanie...' : 'Zaloguj'}
             </button>
           </div>

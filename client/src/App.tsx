@@ -6,7 +6,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { CoursePreview } from './pages/CoursePreview';
 
-// Importujemy nowe komponenty z folderu components
+import { Navbar } from './components/Navbar'; 
 import { InstructorDashboard } from './components/InstructorDashboard';
 import { CourseManager } from './components/CourseManager';
 
@@ -14,18 +14,18 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <Navbar /> 
+        
         <Routes>
-          {/* Trasy publiczne */}
           <Route path="/" element={<Home />} />
           <Route path="/course/:id" element={<CoursePreview />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Trasy chronione (Tylko dla zalogowanych) */}
           <Route 
             path="/dashboard" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['INSTRUCTOR', 'ADMIN']}>
                 <InstructorDashboard />
               </ProtectedRoute>
             } 
@@ -34,7 +34,7 @@ function App() {
           <Route 
             path="/create-course" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['INSTRUCTOR', 'ADMIN']}>
                 <CourseManager />
               </ProtectedRoute>
             } 
@@ -43,7 +43,7 @@ function App() {
           <Route 
             path="/edit-course/:id" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['INSTRUCTOR', 'ADMIN']}>
                 <CourseManager />
               </ProtectedRoute>
             } 
