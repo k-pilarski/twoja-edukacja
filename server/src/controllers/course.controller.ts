@@ -8,14 +8,12 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
   try {
     const { title, description, price, categoryId, requirements, thumbnailUrl } = req.body;
     
-    // Sprawdzamy czy user i userId istnieją (inaczej TS wywali błąd przy Prisma)
     if (!req.user?.userId) {
       return res.status(401).json({ error: "Błąd autoryzacji - brak ID użytkownika" });
     }
 
     const userId = req.user.userId;
 
-    // Szukamy instruktora
     const instructor = await prisma.instructor.findUnique({
       where: { userId: userId }
     });
