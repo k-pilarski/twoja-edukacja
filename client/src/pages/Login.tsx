@@ -31,7 +31,7 @@ export const Login = () => {
       }
 
       login(data.token);
-      navigate('/panel');
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Błąd połączenia z serwerem.');
     } finally {
