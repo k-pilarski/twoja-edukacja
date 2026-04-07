@@ -21,6 +21,7 @@ enum ContentType {
   TEXT
   QUIZ
   EXERCISE
+  IMAGE
 }
 
 enum PurchaseStatus {
