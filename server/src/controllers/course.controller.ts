@@ -1,4 +1,4 @@
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import type { AuthRequest } from '../middlewares/auth.middleware.js';
 
@@ -60,5 +60,16 @@ export const getInstructorCourses = async (req: AuthRequest, res: Response) => {
     res.json(courses);
   } catch (error) {
     res.status(500).json({ error: "Błąd pobierania kursów." });
+  }
+};
+
+export const getAllCourses = async (req: Request, res: Response) => {
+  try {
+    const courses = await prisma.course.findMany({
+      include: { category: true }
+    });
+    res.json(courses);
+  } catch (error) {
+    res.status(500).json({ error: "Błąd pobierania kursów" });
   }
 };
