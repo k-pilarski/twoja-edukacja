@@ -1,26 +1,24 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { RichTextEditor } from './RichTextEditor';
 
 export const CourseManager: React.FC = () => {
-  const { id } = useParams(); // Jeśli jest ID w URL, to znaczy że edytujemy
+  const { id } = useParams();
   const [courseId, setCourseId] = useState<number | null>(id ? Number(id) : null);
   
-  // Stany dla Kursu
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [categoryId, setCategoryId] = useState('1'); // Domyślnie kategoria 1
+  const [categoryId, setCategoryId] = useState('1');
   
-  // Stany dla nowej lekcji
   const [lessonTitle, setLessonTitle] = useState('');
-  const [contentType, setContentType] = useState('VIDEO'); // TEXT, VIDEO, IMAGE
-  const [videoUrl, setVideoUrl] = useState(''); // Dla YT
-  const [textContent, setTextContent] = useState(''); // Dla tekstu
-  const [imageFile, setImageFile] = useState<File | null>(null); // Dla uploadu obrazka
+  const [contentType, setContentType] = useState('VIDEO');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [textContent, setTextContent] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const token = localStorage.getItem('jwt_token');
 
-  // 1. Zapisywanie głównego kursu
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -37,7 +35,7 @@ export const CourseManager: React.FC = () => {
       
       if (response.ok) {
         const data = await response.json();
-        setCourseId(data.id); // Odblokowuje sekcję lekcji
+        setCourseId(data.id);
         alert('Kurs zapisany! Teraz możesz dodawać lekcje.');
       } else {
         alert('Błąd podczas zapisywania kursu.');
@@ -47,14 +45,12 @@ export const CourseManager: React.FC = () => {
     }
   };
 
-  // 2. Dodawanie Lekcji do kursu
   const handleAddLesson = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!courseId) return;
 
-    let finalContentPath = textContent; // Domyślnie bierzemy tekst
+    let finalContentPath = textContent;
     
-    // ZMIANA TUTAJ: Zabezpieczony proces wgrywania obrazka
     if (contentType === 'IMAGE' && imageFile) {
       const formData = new FormData();
       formData.append('file', imageFile);
@@ -70,18 +66,17 @@ export const CourseManager: React.FC = () => {
 
         if (!uploadRes.ok) {
           alert(`Błąd serwera podczas wgrywania zdjęcia: ${uploadData.error || 'Nieznany błąd'}\nSzczegóły: ${uploadData.details || ''}`);
-          return; // Zatrzymujemy działanie - nie dodajemy lekcji!
+          return;
         }
 
-        finalContentPath = uploadData.path; // Ścieżka z Supabase
+        finalContentPath = uploadData.path;
       } catch (uploadErr) {
         console.error("Błąd sieci przy wgrywaniu:", uploadErr);
         alert("Krytyczny błąd połączenia przy wgrywaniu pliku!");
-        return; // Zatrzymujemy działanie
+        return;
       }
     }
 
-    // Dodajemy lekcję do bazy (uruchomi się tylko, gdy upload się powiedzie lub gdy typ to nie IMAGE)
     try {
       const response = await fetch(`http://localhost:5000/api/courses/${courseId}/lessons`, {
         method: 'POST',
@@ -94,7 +89,7 @@ export const CourseManager: React.FC = () => {
           contentType,
           contentPath: finalContentPath,
           videoUrl: contentType === 'VIDEO' ? videoUrl : null,
-          durationMin: 10, // hardcoded dla uproszczenia
+          durationMin: 10,
           order: 1
         })
       });
@@ -114,7 +109,6 @@ export const CourseManager: React.FC = () => {
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">{courseId ? 'Edycja kursu' : 'Kreator nowego kursu'}</h1>
 
-      {/* SEKCJA 1: DANE KURSU */}
       <form onSubmit={handleCreateCourse} className="bg-white p-6 rounded-lg shadow-md mb-8 border">
         <h2 className="text-xl font-semibold mb-4">1. Podstawowe informacje</h2>
         <div className="grid grid-cols-1 gap-4">
@@ -130,7 +124,6 @@ export const CourseManager: React.FC = () => {
         </div>
       </form>
 
-      {/* SEKCJA 2: DODAWANIE LEKCJI (Widoczne tylko, gdy kurs istnieje) */}
       {courseId && (
         <form onSubmit={handleAddLesson} className="bg-gray-50 p-6 rounded-lg shadow-md border">
           <h2 className="text-xl font-semibold mb-4">2. Dodaj nową lekcję</h2>
@@ -143,13 +136,15 @@ export const CourseManager: React.FC = () => {
               <option value="IMAGE">Obrazek</option>
             </select>
 
-            {/* Zależne od wybranego typu */}
             {contentType === 'VIDEO' && (
               <input className="border p-2 rounded" placeholder="Link do wideo (np. YouTube)" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} required />
             )}
             
             {contentType === 'TEXT' && (
-              <textarea className="border p-2 rounded h-32" placeholder="Treść lekcji..." value={textContent} onChange={e => setTextContent(e.target.value)} required />
+              <div className="pb-10">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Treść lekcji</label>
+                <RichTextEditor value={textContent} onChange={setTextContent} />
+              </div>
             )}
 
             {contentType === 'IMAGE' && (
