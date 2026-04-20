@@ -31,7 +31,6 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction): vo
 
   try {
     const decoded = jwt.verify(token, secret) as { userId: number; role: string };
-    
     req.user = decoded;
     next();
   } catch (error) {

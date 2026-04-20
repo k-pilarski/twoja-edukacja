@@ -1,17 +1,28 @@
 import { Router } from 'express';
-import { createCourse, getInstructorCourses, getAllCourses } from '../controllers/course.controller.js';
-import { addLesson } from '../controllers/lesson.controller.js';
-import { protect } from '../middlewares/auth.middleware.js'; 
-import { authorizeRoles } from '../middlewares/role.middleware.js';
+import { 
+  getAllCourses, 
+  getNewestCourses, 
+  getBestsellers,
+  getMyCourses,
+  togglePublishStatus,
+  createCourse,
+  addLesson
+} from '../controllers/course.controller.js';
+import { protect } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-router.post('/', protect, authorizeRoles('INSTRUCTOR', 'ADMIN'), createCourse);
+// --- TRASY PUBLICZNE ---
+router.get('/', getAllCourses); 
+router.get('/newest', getNewestCourses); 
+router.get('/bestsellers', getBestsellers);
 
-router.get('/', getAllCourses);
+// --- TRASY CHRONIONE ---
+router.get('/my-courses', protect, getMyCourses);
+router.patch('/:id/toggle-publish', protect, togglePublishStatus);
 
-router.get('/my-courses', protect, authorizeRoles('INSTRUCTOR'), getInstructorCourses);
-
-router.post('/:courseId/lessons', protect, authorizeRoles('INSTRUCTOR'), addLesson);
+// --- TRASY ZAPISUJĄCE ---
+router.post('/', protect, createCourse);
+router.post('/:courseId/lessons', protect, addLesson);
 
 export default router;

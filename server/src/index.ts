@@ -15,15 +15,6 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', message: 'Serwer działa poprawnie' });
 });
 
-app.get('/api/test-db', async (req, res) => {
-  try {
-    const users = await prisma.user.findMany();
-    res.json({ status: 'db_ok', data: users });
-  } catch (err) {
-    res.status(500).json({ status: 'db_error', error: err });
-  }
-});
-
 app.use(cors({ origin: 'http://localhost:5173' }));
 
 app.use('/api/auth', authRoutes); 
