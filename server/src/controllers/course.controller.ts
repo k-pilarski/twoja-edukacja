@@ -1,75 +1,227 @@
 import type { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import type { AuthRequest } from '../middlewares/auth.middleware.js';
 
 const prisma = new PrismaClient();
 
-export const createCourse = async (req: AuthRequest, res: Response) => {
+// ==========================================
+// TRASY PUBLICZNE
+// ==========================================
+
+export const getAllCourses = async (req: Request, res: Response) => {
   try {
-    const { title, description, price, categoryId, requirements, thumbnailUrl } = req.body;
-    
-    if (!req.user?.userId) {
-      return res.status(401).json({ error: "Błąd autoryzacji - brak ID użytkownika" });
+    const { search, categoryId, minPrice, maxPrice } = req.query;
+
+    const whereCondition: any = { 
+      isPublished: true 
+    };
+
+    if (search) {
+      whereCondition.OR = [
+        { title: { contains: String(search), mode: 'insensitive' } },
+        { description: { contains: String(search), mode: 'insensitive' } }
+      ];
     }
 
-    const userId = req.user.userId;
+    if (categoryId) {
+      whereCondition.categoryId = Number(categoryId);
+    }
 
-    const instructor = await prisma.instructor.findUnique({
+    if (minPrice || maxPrice) {
+      whereCondition.price = {};
+      if (minPrice) whereCondition.price.gte = Number(minPrice);
+      if (maxPrice) whereCondition.price.lte = Number(maxPrice);
+    }
+
+    const courses = await prisma.course.findMany({
+      where: whereCondition,
+      include: {
+        category: true,
+        instructor: { 
+          include: { user: { select: { firstName: true, lastName: true } } }
+        }
+      },
+      orderBy: { publishDate: 'desc' }
+    });
+
+    res.json(courses);
+  } catch (error) {
+    console.error('Błąd pobierania kursów:', error);
+    res.status(500).json({ error: 'Błąd podczas pobierania kursów.' });
+  }
+};
+
+export const getNewestCourses = async (req: Request, res: Response) => {
+  try {
+    const courses = await prisma.course.findMany({
+      where: { isPublished: true },
+      orderBy: { publishDate: 'desc' },
+      take: 10,
+      include: {
+        category: true,
+        instructor: { include: { user: { select: { firstName: true, lastName: true } } } }
+      }
+    });
+    res.json(courses);
+  } catch (error) {
+    console.error('Błąd pobierania nowości:', error);
+    res.status(500).json({ error: 'Błąd podczas pobierania najnowszych kursów.' });
+  }
+};
+
+export const getBestsellers = async (req: Request, res: Response) => {
+  try {
+    const courses = await prisma.course.findMany({
+      where: { isPublished: true },
+      orderBy: {
+        purchases: { _count: 'desc' }
+      },
+      take: 10,
+      include: {
+        category: true,
+        instructor: { include: { user: { select: { firstName: true, lastName: true } } } },
+        _count: { select: { purchases: true } }
+      }
+    });
+    res.json(courses);
+  } catch (error) {
+    console.error('Błąd pobierania bestsellerów:', error);
+    res.status(500).json({ error: 'Błąd podczas pobierania bestsellerów.' });
+  }
+};
+
+// ==========================================
+// TRASY CHRONIONE (Instruktor)
+// ==========================================
+
+export const getMyCourses = async (req: Request, res: Response) => {
+  try {
+    const userId = Number((req as any).user?.userId || (req as any).user?.id);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Brak autoryzacji.' });
+    }
+
+    const instructorProfile = await prisma.instructor.findUnique({
       where: { userId: userId }
     });
 
-    if (!instructor) {
-      return res.status(403).json({ error: "Musisz najpierw uzupełnić profil instruktora." });
+    if (!instructorProfile) {
+      return res.json([]); 
     }
+
+    const myCourses = await prisma.course.findMany({
+      where: { instructorId: instructorProfile.id },
+      include: {
+        category: true,
+        _count: { select: { lessons: true, purchases: true } }
+      },
+      orderBy: { publishDate: 'desc' }
+    });
+
+    res.json(myCourses);
+  } catch (error) {
+    console.error('Błąd pobierania kursów instruktora:', error);
+    res.status(500).json({ error: 'Błąd podczas pobierania Twoich kursów.' });
+  }
+};
+
+export const togglePublishStatus = async (req: Request, res: Response) => {
+  try {
+    const courseId = Number(req.params.id);
+    const userId = Number((req as any).user?.userId || (req as any).user?.id);
+
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      include: { instructor: true }
+    });
+
+    if (!course) return res.status(404).json({ error: 'Nie znaleziono kursu.' });
+
+    if (course.instructor?.userId !== userId) {
+      return res.status(403).json({ error: 'Brak uprawnień do edycji.' });
+    }
+
+    const updatedCourse = await prisma.course.update({
+      where: { id: courseId },
+      data: { isPublished: !course.isPublished }
+    });
+
+    res.json({ 
+      message: updatedCourse.isPublished ? 'Kurs opublikowany.' : 'Cofnięto publikację.',
+      isPublished: updatedCourse.isPublished 
+    });
+  } catch (error) {
+    console.error('Błąd zmiany statusu publikacji:', error);
+    res.status(500).json({ error: 'Wystąpił błąd podczas zmiany statusu.' });
+  }
+};
+
+export const createCourse = async (req: Request, res: Response) => {
+  try {
+    const userId = Number((req as any).user?.userId || (req as any).user?.id);
+
+    const instructorProfile = await prisma.instructor.findUnique({
+      where: { userId: userId }
+    });
+
+    if (!instructorProfile) {
+      return res.status(403).json({ error: 'Brak profilu instruktora.' });
+    }
+
+    const { title, description, price, categoryId, thumbnailUrl } = req.body;
 
     const newCourse = await prisma.course.create({
       data: {
         title,
         description,
         price: Number(price),
-        thumbnailUrl,
         categoryId: Number(categoryId),
-        instructorId: instructor.id,
-        requirements: {
-          create: requirements.map((text: string) => ({ text }))
-        }
-      },
-      include: {
-        requirements: true,
-        category: true
+        thumbnailUrl: thumbnailUrl || null,
+        instructorId: instructorProfile.id
       }
     });
 
-    res.status(201).json(newCourse);
-  } catch (error: any) {
-    console.error("Błąd tworzenia kursu:", error);
-    res.status(500).json({ error: "Błąd podczas tworzenia kursu." });
+    res.json(newCourse);
+  } catch (error) {
+    console.error('Błąd tworzenia kursu:', error);
+    res.status(500).json({ error: 'Błąd podczas tworzenia kursu.' });
   }
 };
 
-export const getInstructorCourses = async (req: AuthRequest, res: Response) => {
+export const addLesson = async (req: Request, res: Response) => {
   try {
-    if (!req.user?.userId) return res.status(401).json({ error: "Brak autoryzacji" });
-    
-    const userId = req.user.userId;
+    const courseId = Number(req.params.courseId);
+    const userId = Number((req as any).user?.userId || (req as any).user?.id);
 
-    const courses = await prisma.course.findMany({
-      where: { instructor: { userId: userId } },
-      include: { category: true, _count: { select: { lessons: true } } }
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      include: { instructor: true }
     });
-    res.json(courses);
-  } catch (error) {
-    res.status(500).json({ error: "Błąd pobierania kursów." });
-  }
-};
 
-export const getAllCourses = async (req: Request, res: Response) => {
-  try {
-    const courses = await prisma.course.findMany({
-      include: { category: true }
+    if (!course) return res.status(404).json({ error: 'Nie znaleziono kursu.' });
+
+    if (course.instructor?.userId !== userId) {
+      return res.status(403).json({ error: 'Brak uprawnień do edycji.' });
+    }
+
+    const { title, contentType, contentPath, videoUrl, durationMin, order, isFree } = req.body;
+
+    const newLesson = await prisma.lesson.create({
+      data: {
+        title,
+        contentType,
+        contentPath: contentPath || null,
+        videoUrl: videoUrl || null,
+        durationMin: Number(durationMin) || 0,
+        order: Number(order) || 1,
+        isFree: Boolean(isFree),
+        courseId: courseId
+      }
     });
-    res.json(courses);
+
+    res.json(newLesson);
   } catch (error) {
-    res.status(500).json({ error: "Błąd pobierania kursów" });
+    console.error('Błąd dodawania lekcji:', error);
+    res.status(500).json({ error: 'Wystąpił błąd podczas dodawania lekcji.' });
   }
 };

@@ -15,12 +15,15 @@ export const Home = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        // Uderzamy do Twojego backendu po wszystkie kursy
-        const response = await fetch('http://localhost:5000/api/courses');
-        if (response.ok) {
-          const data = await response.json();
-          setCourses(data);
+        // ZMIANA: Uderzamy do naszego nowego endpointu z nowościami (Task #23)
+        const response = await fetch('http://localhost:5000/api/courses/newest');
+        
+        if (!response.ok) {
+          throw new Error(`Błąd HTTP: ${response.status}`);
         }
+        
+        const data = await response.json();
+        setCourses(data);
       } catch (error) {
         console.error("Błąd pobierania kursów:", error);
       } finally {
@@ -51,13 +54,15 @@ export const Home = () => {
           {isLoading ? (
             <p className="text-center text-gray-500">Ładowanie kursów...</p>
           ) : courses.length === 0 ? (
-            <p className="text-center text-gray-500">Nie ma jeszcze żadnych kursów. Zostań pierwszym instruktorem!</p>
+            <p className="text-center text-gray-500">
+              Nie ma jeszcze żadnych kursów. (Albo żadne nie zostały jeszcze opublikowane!)
+            </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {courses.map((course) => (
                 <CourseCard
                   key={course.id}
-                  id={course.id} // Dodajemy ID, żeby karta wiedziała, gdzie kierować
+                  id={course.id}
                   title={course.title}
                   description={course.description}
                   price={course.price}

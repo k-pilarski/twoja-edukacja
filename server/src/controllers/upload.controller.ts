@@ -26,12 +26,8 @@ export const uploadFile = async (req: AuthRequest, res: Response) => {
       path: data.path 
     });
   } catch (error: any) {
-    // ZMIANA TUTAJ: Wypisujemy dokładny błąd, żeby zobaczyć go w terminalu backendu
-    console.error('PEŁNY BŁĄD UPLOADU:', error); 
-    res.status(500).json({ 
-      error: 'Błąd podczas wgrywania pliku.',
-      details: error.message || error
-    });
+    console.error('Błąd uploadu:', error.message || error); 
+    res.status(500).json({ error: 'Błąd podczas wgrywania pliku.' });
   }
 };
 

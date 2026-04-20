@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Definicja typów, żeby TypeScript nie krzyczał
+// Zaktualizowana definicja typu o pole isPublished
 interface Course {
   id: number;
   title: string;
   price: number;
+  isPublished: boolean; // Nowe pole
   category: { name: string };
   _count: { lessons: number };
 }
@@ -15,28 +16,58 @@ export const InstructorDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      const token = localStorage.getItem('jwt_token');
-      try {
-        const response = await fetch('http://localhost:5000/api/courses/my-courses', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setCourses(data);
+  const fetchCourses = async () => {
+    const token = localStorage.getItem('jwt_token');
+    try {
+      const response = await fetch('http://localhost:5000/api/courses/my-courses', {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      } catch (error) {
-        console.error('Błąd pobierania kursów', error);
-      } finally {
-        setLoading(false);
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCourses(data);
       }
-    };
+    } catch (error) {
+      console.error('Błąd pobierania kursów', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchCourses();
   }, []);
+
+  // Nowa funkcja do przełączania statusu publikacji
+  const handleTogglePublish = async (courseId: number, currentStatus: boolean) => {
+    const token = localStorage.getItem('jwt_token');
+    try {
+      const response = await fetch(`http://localhost:5000/api/courses/${courseId}/toggle-publish`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Aktualizujemy stan lokalnie, żeby UI od razu zareagował
+        setCourses(prevCourses =>
+          prevCourses.map(course =>
+            course.id === courseId
+              ? { ...course, isPublished: !currentStatus }
+              : course
+          )
+        );
+      } else {
+        alert('Nie udało się zmienić statusu publikacji.');
+      }
+    } catch (error) {
+      console.error('Błąd podczas zmiany statusu:', error);
+      alert('Wystąpił błąd połączenia z serwerem.');
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -62,18 +93,46 @@ export const InstructorDashboard: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map(course => (
-            <div key={course.id} className="border rounded-lg p-5 shadow-sm bg-white">
-              <h3 className="font-bold text-lg mb-2">{course.title}</h3>
-              <p className="text-sm text-gray-500 mb-1">Kategoria: {course.category?.name || 'Brak'}</p>
-              <p className="text-sm text-gray-500 mb-4">Liczba lekcji: {course._count?.lessons || 0}</p>
-              <div className="flex justify-between items-center mt-4">
-                <span className="font-bold text-green-600">{course.price} PLN</span>
-                <button 
-                  onClick={() => navigate(`/edit-course/${course.id}`)}
-                  className="bg-gray-200 text-gray-800 px-4 py-1 rounded hover:bg-gray-300"
-                >
-                  Edytuj
-                </button>
+            <div key={course.id} className="border rounded-lg p-5 shadow-sm bg-white flex flex-col justify-between">
+              <div>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-bold text-lg leading-tight">{course.title}</h3>
+                  {/* Mały badge statusu */}
+                  <span className={`text-[10px] uppercase px-2 py-1 rounded font-bold ${
+                    course.isPublished ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {course.isPublished ? 'Publiczny' : 'Szkic'}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 mb-1">Kategoria: {course.category?.name || 'Brak'}</p>
+                <p className="text-sm text-gray-500 mb-4">Liczba lekcji: {course._count?.lessons || 0}</p>
+              </div>
+
+              <div className="mt-4">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-bold text-green-600">{course.price} PLN</span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Dynamiczny przycisk publikacji */}
+                  <button
+                    onClick={() => handleTogglePublish(course.id, course.isPublished)}
+                    className={`text-xs py-2 rounded font-semibold transition ${
+                      course.isPublished 
+                        ? 'bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100' 
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
+                  >
+                    {course.isPublished ? 'Wycofaj' : 'Opublikuj'}
+                  </button>
+
+                  <button 
+                    onClick={() => navigate(`/edit-course/${course.id}`)}
+                    className="bg-gray-100 text-gray-800 text-xs py-2 rounded hover:bg-gray-200 transition border border-gray-200"
+                  >
+                    Edytuj
+                  </button>
+                </div>
               </div>
             </div>
           ))}
