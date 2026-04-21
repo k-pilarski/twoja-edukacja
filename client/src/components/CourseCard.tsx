@@ -1,29 +1,53 @@
-import { Link } from 'react-router-dom';
+import React from 'react';
+import type { Course } from '../types';
 
 interface CourseCardProps {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
+  course: Course;
 }
 
-export const CourseCard = ({ id, title, description, price }: CourseCardProps) => {
+export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
+  // Zabezpieczenie przed błędem "Cannot read properties of undefined"
+  if (!course) return null;
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300">
-      <div className="h-40 bg-gray-200 rounded-md mb-4 animate-pulse"></div>
-      
-      <h3 className="text-lg font-bold text-gray-800">{title}</h3>
-      <p className="text-gray-600 mt-2 line-clamp-2">{description}</p>
-      
-      <div className="mt-4 flex items-center justify-between">
-        <span className="font-bold text-blue-600 text-xl">{price} PLN</span>
-        {/* Przycisk zmieniony na Link do podglądu kursu */}
-        <Link 
-          to={`/course/${id}`}
-          className="text-sm font-medium text-white bg-blue-600 px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-        >
-          Zobacz
-        </Link>
+    <div className="flex flex-col overflow-hidden transition-shadow duration-300 bg-white rounded-lg shadow-md hover:shadow-xl">
+      {/* Miniaturka kursu */}
+      <div className="relative h-48 bg-gray-200">
+        {course.thumbnailUrl ? (
+          <img 
+            src={course.thumbnailUrl} 
+            alt={course.title} 
+            className="object-cover w-full h-full"
+          />
+        ) : (
+          <div className="flex items-center justify-center w-full h-full text-gray-400">
+            Brak okładki
+          </div>
+        )}
+        {/* Plakietka z kategorią */}
+        <span className="absolute px-2 py-1 text-xs text-white bg-blue-600 rounded top-2 right-2">
+          {course.category?.name || 'Inne'}
+        </span>
+      </div>
+
+      {/* Treść karty */}
+      <div className="flex flex-col grow p-5">
+        <h3 className="mb-2 text-xl font-bold text-gray-800 line-clamp-2">
+          {course.title}
+        </h3>
+        <p className="mb-4 text-sm text-gray-600 line-clamp-3">
+          {course.description}
+        </p>
+
+        {/* Stopka karty */}
+        <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-100">
+          <div className="text-sm text-gray-500">
+            Autor: <span className="font-semibold">{course.instructor?.user?.firstName} {course.instructor?.user?.lastName}</span>
+          </div>
+          <div className="text-lg font-bold text-green-600">
+            {course.price > 0 ? `${course.price} zł` : 'Za darmo'}
+          </div>
+        </div>
       </div>
     </div>
   );
