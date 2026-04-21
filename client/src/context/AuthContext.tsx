@@ -33,8 +33,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        // POPRAWKA: Backend zwraca obiekt usera bezpośrednio, nie w polu .user
+        setUser(data); 
+        console.log("Zalogowano użytkownika:", data);
       } else {
+        console.warn("Sesja wygasła lub token jest nieprawidłowy");
         logout();
       }
     } catch (error) {
