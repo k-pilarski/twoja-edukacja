@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; // 1. DODANY IMPORT
 import type { Course } from '../types';
 
 interface CourseCardProps {
@@ -6,11 +7,16 @@ interface CourseCardProps {
 }
 
 export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
+  const navigate = useNavigate(); // 2. INICJALIZACJA HOOKA
+
   // Zabezpieczenie przed błędem "Cannot read properties of undefined"
   if (!course) return null;
 
   return (
-    <div className="flex flex-col overflow-hidden transition-shadow duration-300 bg-white rounded-lg shadow-md hover:shadow-xl">
+    <div 
+      onClick={() => navigate(`/course/${course.id}`)} // 3. DODANA LOGIKA KLIKNIĘCIA
+      className="flex flex-col overflow-hidden transition-shadow duration-300 bg-white rounded-lg shadow-md hover:shadow-xl cursor-pointer" // 4. DODANY cursor-pointer
+    >
       {/* Miniaturka kursu */}
       <div className="relative h-48 bg-gray-200">
         {course.thumbnailUrl ? (

@@ -4,29 +4,35 @@ import { Register } from './pages/Register';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { CoursePreview } from './pages/CoursePreview';
-
-// IMPORTUJEMY NASZ NOWY KATALOG
 import { CoursesCatalog } from './pages/CoursesCatalog'; 
-
 import { Navbar } from './components/Navbar'; 
 import { InstructorDashboard } from './components/InstructorDashboard';
 import { CourseManager } from './components/CourseManager';
+
+// IMPORT ODTWARZACZA
+import { LessonPlayer } from './pages/LessonPlayer';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        {/* Navbar będzie widoczny na każdej podstronie */}
         <Navbar /> 
         
         <main className="min-h-screen bg-gray-50">
           <Routes>
-            {/* ZMIANA: Zamiast starego <Home />, 
-              teraz na wejściu (/) mamy nasz nowy katalog kursów z filtrami 
-            */}
             <Route path="/" element={<CoursesCatalog />} />
-            
             <Route path="/course/:id" element={<CoursePreview />} />
+            
+            {/* NOWA TRASA: ODTWARZACZ LEKCJI (wymaga logowania) */}
+            <Route 
+              path="/course/:courseId/learn/:lessonId?" 
+              element={
+                <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'ADMIN']}>
+                  <LessonPlayer />
+                </ProtectedRoute>
+              } 
+            />
+
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 

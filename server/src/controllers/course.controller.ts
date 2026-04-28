@@ -89,6 +89,38 @@ export const getBestsellers = async (req: Request, res: Response) => {
   }
 };
 
+export const getCourseById = async (req: Request, res: Response) => {
+  try {
+    const courseId = Number(req.params.id);
+
+    if (isNaN(courseId)) {
+      return res.status(400).json({ error: 'Nieprawidłowe ID kursu.' });
+    }
+
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      include: {
+        category: true,
+        instructor: { 
+          include: { user: { select: { firstName: true, lastName: true } } } 
+        },
+        lessons: {
+          orderBy: { order: 'asc' }
+        }
+      }
+    });
+
+    if (!course) {
+      return res.status(404).json({ error: 'Nie znaleziono kursu.' });
+    }
+
+    res.json(course);
+  } catch (error) {
+    console.error('Błąd pobierania kursu:', error);
+    res.status(500).json({ error: 'Błąd podczas pobierania kursu.' });
+  }
+};
+
 // ==========================================
 // TRASY CHRONIONE (Instruktor)
 // ==========================================

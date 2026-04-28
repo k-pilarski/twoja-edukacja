@@ -18,4 +18,17 @@ export interface Course {
     purchases?: number;
     lessons?: number;
   };
+  lessons?: Lesson[];
+}
+
+export interface Lesson {
+  id: number;
+  title: string;
+  contentType: 'VIDEO' | 'TEXT' | 'QUIZ' | 'EXERCISE' | 'IMAGE';
+  contentPath?: string;
+  videoUrl?: string;
+  durationMin: number;
+  order: number;
+  isFree: boolean;
+  courseId: number;
 }
