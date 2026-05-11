@@ -1,12 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CourseCard } from '../components/CourseCard';
-
-interface Course {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-}
+import type { Course } from '../types';
 
 export const Home = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -15,7 +9,6 @@ export const Home = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        // ZMIANA: Uderzamy do naszego nowego endpointu z nowościami (Task #23)
         const response = await fetch('http://localhost:5000/api/courses/newest');
         
         if (!response.ok) {
@@ -60,13 +53,7 @@ export const Home = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {courses.map((course) => (
-                <CourseCard
-                  key={course.id}
-                  id={course.id}
-                  title={course.title}
-                  description={course.description}
-                  price={course.price}
-                />
+                <CourseCard key={course.id} course={course} />
               ))}
             </div>
           )}

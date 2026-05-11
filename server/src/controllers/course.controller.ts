@@ -91,33 +91,37 @@ export const getBestsellers = async (req: Request, res: Response) => {
 
 export const getCourseById = async (req: Request, res: Response) => {
   try {
-    const courseId = Number(req.params.id);
+    const { id } = req.params;
+    // Spróbuj wyciągnąć userId z tokena (jeśli został przesłany)
+    const authHeader = req.headers.authorization;
+    let userId: number | undefined;
 
-    if (isNaN(courseId)) {
-      return res.status(400).json({ error: 'Nieprawidłowe ID kursu.' });
+    if (authHeader) {
+      // Prosta ręczna weryfikacja jeśli middleware zawiedzie
+      // Tutaj zakładamy, że korzystasz z JWT i masz dostęp do userId
+      userId = (req as any).user?.userId; 
     }
+
+    console.log(`Pobieranie kursu ${id} dla użytkownika: ${userId || 'Gość'}`);
 
     const course = await prisma.course.findUnique({
-      where: { id: courseId },
+      where: { id: Number(id) },
       include: {
-        category: true,
-        instructor: { 
-          include: { user: { select: { firstName: true, lastName: true } } } 
-        },
-        lessons: {
-          orderBy: { order: 'asc' }
-        }
-      }
+        instructor: { include: { user: true } },
+        lessons: true,
+        purchases: userId ? { where: { userId: Number(userId) } } : false
+      },
     });
 
-    if (!course) {
-      return res.status(404).json({ error: 'Nie znaleziono kursu.' });
-    }
+    if (!course) return res.status(404).json({ error: 'Kurs nie znaleziony' });
 
-    res.json(course);
+    const isPurchased = course.purchases && course.purchases.length > 0;
+    console.log(`Czy kurs kupiony przez użytkownika ${userId}: ${isPurchased}`);
+
+    res.json({ ...course, isPurchased });
   } catch (error) {
-    console.error('Błąd pobierania kursu:', error);
-    res.status(500).json({ error: 'Błąd podczas pobierania kursu.' });
+    console.error("Błąd w getCourseById:", error);
+    res.status(500).json({ error: 'Błąd serwera' });
   }
 };
 

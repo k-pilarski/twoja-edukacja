@@ -90,3 +90,35 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
   res.json({ received: true });
 };
+
+export const academicSuccess = async (req: Request, res: Response) => {
+  try {
+    const { courseId } = req.body;
+    const userId = Number((req as any).user?.userId || (req as any).user?.id);
+
+    if (!courseId || !userId) {
+      return res.status(400).json({ error: 'Brak wymaganych danych' });
+    }
+
+    // Sprawdzamy, czy użytkownik ma już ten kurs, by nie dublować wpisów
+    const existingPurchase = await prisma.purchase.findFirst({
+      where: { userId, courseId: Number(courseId) }
+    });
+
+    if (!existingPurchase) {
+      await prisma.purchase.create({
+        data: {
+          userId,
+          courseId: Number(courseId),
+          amountPaid: 0 // Zapisujemy 0 lub stałą kwotę na potrzeby uczelni
+        }
+      });
+      console.log(`[Akademicki Checkout] Sukces! Użytkownik ${userId} otrzymał dostęp do kursu ${courseId}.`);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Błąd akademickiego webhooka:', error);
+    res.status(500).json({ error: 'Wystąpił błąd podczas nadawania dostępu.' });
+  }
+};

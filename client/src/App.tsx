@@ -12,6 +12,9 @@ import { CourseManager } from './components/CourseManager';
 // IMPORT ODTWARZACZA
 import { LessonPlayer } from './pages/LessonPlayer';
 
+// IMPORT CHECKOUTU
+import { Checkout } from './pages/Checkout';
+
 function App() {
   return (
     <AuthProvider>
@@ -23,7 +26,17 @@ function App() {
             <Route path="/" element={<CoursesCatalog />} />
             <Route path="/course/:id" element={<CoursePreview />} />
             
-            {/* NOWA TRASA: ODTWARZACZ LEKCJI (wymaga logowania) */}
+            {/* NOWA TRASA: KOSZYK / PODSUMOWANIE ZAMÓWIENIA (wymaga logowania) */}
+            <Route 
+              path="/checkout/:courseId" 
+              element={
+                <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'ADMIN']}>
+                  <Checkout />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* TRASA: ODTWARZACZ LEKCJI (wymaga logowania) */}
             <Route 
               path="/course/:courseId/learn/:lessonId?" 
               element={
