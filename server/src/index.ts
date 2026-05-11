@@ -6,6 +6,7 @@ import cors from 'cors';
 import courseRoutes from './routes/course.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import progressRoutes from './routes/progress.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
@@ -22,6 +23,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/progress', progressRoutes);
+app.use('/api/payments', paymentRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Serwer uruchomiony na porcie ${PORT}`);
