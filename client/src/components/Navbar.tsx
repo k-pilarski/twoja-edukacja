@@ -5,9 +5,6 @@ export const Navbar = () => {
   const { token, user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // DEBUG: Odkomentuj poniższą linię, aby zobaczyć w konsoli przeglądarki, 
-  // co React wie o Twoim użytkowniku:
-  // console.log("Aktualny użytkownik:", user);
 
   const handleLogout = () => {
     logout();
@@ -32,9 +29,6 @@ export const Navbar = () => {
           <div className="flex items-center space-x-4">
             {token ? (
               <>
-                {/* WAŻNE: Upewnij się, że user.role jest dokładnie taki sam 
-                   jak w bazie danych (np. 'INSTRUCTOR')
-                */}
                 {(user?.role === 'INSTRUCTOR' || user?.role === 'ADMIN') && (
                   <Link 
                     to="/dashboard" 

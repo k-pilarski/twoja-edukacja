@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Zaktualizowana definicja typu o pole isPublished
 interface Course {
   id: number;
   title: string;
   price: number;
-  isPublished: boolean; // Nowe pole
+  isPublished: boolean;
   category: { name: string };
   _count: { lessons: number };
 }

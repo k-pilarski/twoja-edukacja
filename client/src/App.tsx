@@ -3,11 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Navbar } from './components/Navbar'; 
-
-// "Eager loading" tylko dla kluczowych, początkowych ścieżek
 import { CoursesCatalog } from './pages/CoursesCatalog'; 
 
-// Lazy Loading: Komponenty ładują się tylko wtedy, gdy są potrzebne
 const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
 const Register = lazy(() => import('./pages/Register').then(m => ({ default: m.Register })));
 const CoursePreview = lazy(() => import('./pages/CoursePreview').then(m => ({ default: m.CoursePreview })));

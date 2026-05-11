@@ -60,6 +60,16 @@ export const VideoPlayer = ({ contentPath, videoUrl }: VideoPlayerProps) => {
         </div>
       );
     }
+
+    return (
+      <video 
+        className="w-full aspect-video rounded-lg shadow-lg border border-gray-200 bg-black" 
+        controls 
+        src={videoUrl}
+      >
+        Twoja przeglądarka nie obsługuje odtwarzacza wideo.
+      </video>
+    );
   }
 
   if (error) return <div className="p-4 bg-red-50 text-red-600 rounded-md border border-red-200">{error}</div>;

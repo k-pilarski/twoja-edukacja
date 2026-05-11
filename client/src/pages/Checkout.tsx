@@ -65,7 +65,7 @@ export const Checkout = () => {
         <div className="p-6 bg-white border border-gray-200 shadow-sm lg:col-span-2 rounded-xl">
           <h2 className="pb-4 mb-4 text-xl font-bold border-b">Wybrany kurs</h2>
           <div className="flex items-start gap-4">
-            <div className="flex items-center justify-center flex-shrink-0 w-32 h-24 bg-gray-200 rounded-lg">
+            <div className="flex items-center justify-center shrink-0 w-32 h-24 bg-gray-200 rounded-lg">
               <span className="text-sm text-gray-400">Miniaturka</span>
             </div>
             <div>
