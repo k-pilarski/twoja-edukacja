@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { CourseCard } from '../components/CourseCard';
-import type { Course } from '../types';
+import type { Course, PaginationData } from '../types';
 
 export const CoursesCatalog: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
+  // NOWY STAN: Paginacja
+  const [pagination, setPagination] = useState<PaginationData | null>(null);
+  const [page, setPage] = useState(1);
+  const limit = 6; // Ilość kursów na stronę (możesz zmienić)
+
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,14 +27,20 @@ export const CoursesCatalog: React.FC = () => {
       if (categoryId) queryParams.append('categoryId', categoryId);
       if (minPrice) queryParams.append('minPrice', minPrice);
       if (maxPrice) queryParams.append('maxPrice', maxPrice);
+      
+      // Dodajemy parametry stronicowania do URL
+      queryParams.append('page', page.toString());
+      queryParams.append('limit', limit.toString());
 
       const response = await fetch(`http://localhost:5000/api/courses?${queryParams.toString()}`);
       
       if (!response.ok) throw new Error('Nie udało się pobrać kursów.');
       
       const data = await response.json();
-      // Upewniamy się, że data jest tablicą
-      setCourses(Array.isArray(data) ? data : []);
+      
+      // Zmiana: teraz backend zwraca obiekt { courses, pagination }
+      setCourses(data.courses || []);
+      setPagination(data.pagination || null);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -37,16 +48,22 @@ export const CoursesCatalog: React.FC = () => {
     }
   };
 
+  // Jeśli użytkownik zmieni jakikolwiek filtr (np. wpisze coś w wyszukiwarkę), wracamy na stronę 1
+  useEffect(() => {
+    setPage(1);
+  }, [search, categoryId, minPrice, maxPrice]);
+
+  // Nasłuchujemy na zmianę filtrów ORAZ strony (page)
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchCourses();
-    }, 400); // 400ms opóźnienia
+    }, 400); 
 
     return () => clearTimeout(delayDebounceFn);
-  }, [search, categoryId, minPrice, maxPrice]);
+  }, [search, categoryId, minPrice, maxPrice, page]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl px-4 py-8 mx-auto">
       <h1 className="mb-8 text-3xl font-bold">Katalog Kursów</h1>
 
       {/* PASEK FILTRÓW */}
@@ -58,7 +75,7 @@ export const CoursesCatalog: React.FC = () => {
             placeholder="Np. React, JavaScript..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         
@@ -67,7 +84,7 @@ export const CoursesCatalog: React.FC = () => {
           <select 
             value={categoryId} 
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Wszystkie</option>
             <option value="1">Programowanie</option>
@@ -82,7 +99,7 @@ export const CoursesCatalog: React.FC = () => {
             type="number" 
             value={minPrice}
             onChange={(e) => setMinPrice(e.target.value)}
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -92,7 +109,7 @@ export const CoursesCatalog: React.FC = () => {
             type="number" 
             value={maxPrice}
             onChange={(e) => setMaxPrice(e.target.value)}
-            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
@@ -111,11 +128,38 @@ export const CoursesCatalog: React.FC = () => {
           Nie znaleźliśmy kursów o takich parametrach.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course) => (
-            <CourseCard key={course.id} course={course} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
+
+          {/* KONTROLKI PAGINACJI */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-12">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                className="px-4 py-2 text-sm font-medium transition bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Poprzednia
+              </button>
+              
+              <span className="text-sm font-medium text-gray-700">
+                Strona {pagination.currentPage} z {pagination.totalPages}
+              </span>
+              
+              <button
+                disabled={page === pagination.totalPages}
+                onClick={() => setPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                className="px-4 py-2 text-sm font-medium transition bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Następna
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

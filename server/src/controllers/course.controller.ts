@@ -9,11 +9,13 @@ const prisma = new PrismaClient();
 
 export const getAllCourses = async (req: Request, res: Response) => {
   try {
-    const { search, categoryId, minPrice, maxPrice } = req.query;
+    const { search, categoryId, minPrice, maxPrice, page = 1, limit = 12 } = req.query;
+    
+    const p = Number(page);
+    const l = Number(limit);
+    const skip = (p - 1) * l;
 
-    const whereCondition: any = { 
-      isPublished: true 
-    };
+    const whereCondition: any = { isPublished: true };
 
     if (search) {
       whereCondition.OR = [
@@ -22,9 +24,7 @@ export const getAllCourses = async (req: Request, res: Response) => {
       ];
     }
 
-    if (categoryId) {
-      whereCondition.categoryId = Number(categoryId);
-    }
+    if (categoryId) whereCondition.categoryId = Number(categoryId);
 
     if (minPrice || maxPrice) {
       whereCondition.price = {};
@@ -32,18 +32,38 @@ export const getAllCourses = async (req: Request, res: Response) => {
       if (maxPrice) whereCondition.price.lte = Number(maxPrice);
     }
 
-    const courses = await prisma.course.findMany({
-      where: whereCondition,
-      include: {
-        category: true,
-        instructor: { 
-          include: { user: { select: { firstName: true, lastName: true } } }
-        }
-      },
-      orderBy: { publishDate: 'desc' }
-    });
+    // Pobieramy dane i całkowitą liczbę rekordów równolegle (Optymalizacja!)
+    const [courses, totalCount] = await Promise.all([
+      prisma.course.findMany({
+        where: whereCondition,
+        skip,
+        take: l,
+        select: {
+          id: true,
+          title: true,
+          price: true,
+          thumbnailUrl: true,
+          publishDate: true,
+          category: { select: { name: true } },
+          instructor: {
+            select: {
+              user: { select: { firstName: true, lastName: true } }
+            }
+          }
+        },
+        orderBy: { publishDate: 'desc' }
+      }),
+      prisma.course.count({ where: whereCondition })
+    ]);
 
-    res.json(courses);
+    res.json({
+      courses,
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / l),
+        currentPage: p
+      }
+    });
   } catch (error) {
     console.error('Błąd pobierania kursów:', error);
     res.status(500).json({ error: 'Błąd podczas pobierania kursów.' });
