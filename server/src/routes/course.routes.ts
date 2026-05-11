@@ -13,18 +13,30 @@ import { protect } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-// --- TRASY PUBLICZNE (Statyczne - muszą być wyżej!) ---
+// Middleware pomocniczy do "miękkiej" autoryzacji
+// Pozwala odczytać token, ale nie blokuje dostępu gościom
+const optionalAuth = (req: any, res: any, next: any) => {
+  // Jeśli w nagłówku jest token, używamy standardowego protect
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    return protect(req, res, next);
+  }
+  // Jeśli nie ma tokena, idziemy dalej jako gość
+  next();
+};
+
+// --- TRASY PUBLICZNE ---
 router.get('/', getAllCourses); 
 router.get('/newest', getNewestCourses); 
 router.get('/bestsellers', getBestsellers);
 
-// --- TRASY CHRONIONE (Statyczne - muszą być wyżej!) ---
+// --- TRASY CHRONIONE ---
 router.get('/my-courses', protect, getMyCourses);
 
-// --- TRASY DYNAMICZNE Z PARAMETREM :id (Zawsze na dole zapytań GET!) ---
-router.get('/:id', getCourseById); 
+// --- TRASY DYNAMICZNE Z PARAMETREM :id ---
+// DODANO optionalAuth: dzięki temu req.user będzie dostępne w kontrolerze dla zalogowanych
+router.get('/:id', optionalAuth, getCourseById); 
 
-// --- INNE TRASY (PATCH, POST) ---
+// --- INNE TRASY ---
 router.patch('/:id/toggle-publish', protect, togglePublishStatus);
 router.post('/', protect, createCourse);
 router.post('/:courseId/lessons', protect, addLesson);
