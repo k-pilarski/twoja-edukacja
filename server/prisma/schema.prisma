@@ -50,6 +50,7 @@ model User {
   instructorProfile Instructor?   // Relacja 1:1 z profilem instruktora
 
   @@map("uzytkownicy")
+  @@index([email]) // Indeks na email dla szybkiego logowania
 }
 
 model Instructor {
@@ -99,6 +100,9 @@ model Course {
   certificates Certificate[]
 
   @@map("kursy")
+  @@index([instructorId])
+  @@index([categoryId])
+  @@index([isPublished, publishDate]) // Indeks złożony dla katalogu kursów
 }
 
 model Requirement {
@@ -127,6 +131,7 @@ model Lesson {
   progress     Progress[]
 
   @@map("lekcje")
+  @@index([courseId, order]) // Przyspiesza pobieranie programu kursu w kolejności
 }
 
 model Purchase {

@@ -12,29 +12,27 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
     const { courseId } = req.body;
     const userId = Number((req as any).user?.userId || (req as any).user?.id);
 
+    // Pobieramy TYLKO to co potrzebne do Stripe
     const course = await prisma.course.findUnique({
       where: { id: Number(courseId) },
+      select: { id: true, title: true, description: true, price: true }
     });
 
-    if (!course) {
-      return res.status(404).json({ error: 'Nie znaleziono kursu.' });
-    }
+    if (!course) return res.status(404).json({ error: 'Nie znaleziono kursu.' });
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'blik', 'p24'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'pln',
-            product_data: {
-              name: course.title,
-              description: course.description.substring(0, 255),
-            },
-            unit_amount: Math.round(Number(course.price) * 100),
+      line_items: [{
+        price_data: {
+          currency: 'pln',
+          product_data: {
+            name: course.title,
+            description: course.description.substring(0, 255),
           },
-          quantity: 1,
+          unit_amount: Math.round(Number(course.price) * 100),
         },
-      ],
+        quantity: 1,
+      }],
       mode: 'payment',
       success_url: `${process.env.CLIENT_URL}/course/${courseId}?success=true`,
       cancel_url: `${process.env.CLIENT_URL}/course/${courseId}?canceled=true`,
@@ -46,7 +44,6 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
 
     res.json({ url: session.url });
   } catch (error) {
-    console.error('Błąd Stripe Checkout:', error);
     res.status(500).json({ error: 'Błąd podczas inicjowania płatności.' });
   }
 };
@@ -96,13 +93,10 @@ export const academicSuccess = async (req: Request, res: Response) => {
     const { courseId } = req.body;
     const userId = Number((req as any).user?.userId || (req as any).user?.id);
 
-    if (!courseId || !userId) {
-      return res.status(400).json({ error: 'Brak wymaganych danych' });
-    }
-
-    // Sprawdzamy, czy użytkownik ma już ten kurs, by nie dublować wpisów
+    // Używamy findFirst z samym select ID - najszybsze sprawdzenie
     const existingPurchase = await prisma.purchase.findFirst({
-      where: { userId, courseId: Number(courseId) }
+      where: { userId, courseId: Number(courseId) },
+      select: { id: true }
     });
 
     if (!existingPurchase) {
@@ -110,15 +104,13 @@ export const academicSuccess = async (req: Request, res: Response) => {
         data: {
           userId,
           courseId: Number(courseId),
-          amountPaid: 0 // Zapisujemy 0 lub stałą kwotę na potrzeby uczelni
+          amountPaid: 0
         }
       });
-      console.log(`[Akademicki Checkout] Sukces! Użytkownik ${userId} otrzymał dostęp do kursu ${courseId}.`);
     }
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Błąd akademickiego webhooka:', error);
-    res.status(500).json({ error: 'Wystąpił błąd podczas nadawania dostępu.' });
+    res.status(500).json({ error: 'Błąd podczas nadawania dostępu.' });
   }
 };

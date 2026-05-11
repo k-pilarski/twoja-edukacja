@@ -32,3 +32,14 @@ export interface Lesson {
   isFree: boolean;
   courseId: number;
 }
+
+export interface PaginationData {
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+}
+
+export interface PaginatedResponse {
+  courses: Course[];
+  pagination: PaginationData;
+}
