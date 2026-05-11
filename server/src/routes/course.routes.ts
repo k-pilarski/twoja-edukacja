@@ -33,7 +33,6 @@ router.get('/bestsellers', getBestsellers);
 router.get('/my-courses', protect, getMyCourses);
 
 // --- TRASY DYNAMICZNE Z PARAMETREM :id ---
-// DODANO optionalAuth: dzięki temu req.user będzie dostępne w kontrolerze dla zalogowanych
 router.get('/:id', optionalAuth, getCourseById); 
 
 // --- INNE TRASY ---

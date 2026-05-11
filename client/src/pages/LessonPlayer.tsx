@@ -2,27 +2,48 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Course, Lesson } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { VideoPlayer } from '../components/VideoPlayer';
+import { SecureImage } from '../components/SecureImage';
 
 export const LessonPlayer = () => {
   const { courseId, lessonId } = useParams();
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, user, isLoading: authLoading } = useAuth();
   
   const [course, setCourse] = useState<Course | null>(null);
   const [completedLessons, setCompletedLessons] = useState<number[]>([]);
   const [isLoadingProgress, setIsLoadingProgress] = useState(false);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/courses/${courseId}`)
+    if (authLoading) return;
+
+    fetch(`http://localhost:5000/api/courses/${courseId}`, {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    })
       .then(res => res.json())
       .then(data => {
+        if (data.error) {
+          navigate('/');
+          return;
+        }
+
+        const isInstructor = user && data.instructor?.userId === user.id;
+        const isAdmin = user && user.role === 'ADMIN';
+        const hasAccess = data.isPurchased || Number(data.price) === 0 || isInstructor || isAdmin;
+
+        if (!hasAccess) {
+          alert('Musisz wykupić ten kurs, aby uzyskać do niego dostęp.');
+          navigate(`/course/${courseId}`);
+          return;
+        }
+
         setCourse(data);
         if (!lessonId && data.lessons?.length > 0) {
           const firstLesson = data.lessons.sort((a: Lesson, b: Lesson) => a.order - b.order)[0];
           navigate(`/course/${courseId}/learn/${firstLesson.id}`, { replace: true });
         }
       });
-  }, [courseId, lessonId, navigate]);
+  }, [courseId, lessonId, navigate, token, user, authLoading]);
 
   useEffect(() => {
     if (token) {
@@ -115,17 +136,18 @@ export const LessonPlayer = () => {
             {/* ODTWARZACZ (Pojawia się tylko dla wideo) */}
             {currentLesson.contentType === 'VIDEO' && (
               <div className="flex items-center justify-center w-full bg-black aspect-video">
-                {currentLesson.videoUrl ? (
-                  <video 
-                    controls 
-                    src={currentLesson.videoUrl}
-                    className="w-full h-full"
-                  >
-                    Twoja przeglądarka nie obsługuje tagu video.
-                  </video>
+                {currentLesson.videoUrl || currentLesson.contentPath ? (
+                  <VideoPlayer videoUrl={currentLesson.videoUrl} contentPath={currentLesson.contentPath} />
                 ) : (
                   <div className="text-gray-400">Brak wideo do odtworzenia.</div>
                 )}
+              </div>
+            )}
+
+            {/* OBRAZEK (Pojawia się tylko dla obrazków) */}
+            {currentLesson.contentType === 'IMAGE' && currentLesson.contentPath && (
+              <div className="w-full max-w-4xl p-8 mx-auto pb-0">
+                <SecureImage contentPath={currentLesson.contentPath} />
               </div>
             )}
             
@@ -149,16 +171,18 @@ export const LessonPlayer = () => {
               </div>
               
               {/* TREŚĆ TEKSTOWA LUB OPIS LEKCJI */}
-              <div className="max-w-none text-gray-700 prose">
-                {currentLesson.contentPath ? (
-                   // whitespace-pre-wrap zapewnia, że enter z bazy danych wyświetli się jako nowa linia
-                   <div className="whitespace-pre-wrap leading-relaxed">
-                     {currentLesson.contentPath}
-                   </div>
-                ) : (
-                   <p className="italic text-gray-400">Brak dodatkowej treści dla tej lekcji.</p>
-                )}
-              </div>
+              {currentLesson.contentType !== 'IMAGE' && (
+                <div className="max-w-none text-gray-700 prose mt-4">
+                  {currentLesson.contentPath ? (
+                     <div 
+                       className="whitespace-pre-wrap leading-relaxed quill-content"
+                       dangerouslySetInnerHTML={{ __html: currentLesson.contentPath }}
+                     />
+                  ) : (
+                     <p className="italic text-gray-400">Brak dodatkowej treści dla tej lekcji.</p>
+                  )}
+                </div>
+              )}
             </div>
           </>
         ) : (

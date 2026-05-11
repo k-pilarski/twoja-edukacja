@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 export const CoursePreview = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [course, setCourse] = useState<any | null>(null);
 
@@ -48,7 +48,11 @@ export const CoursePreview = () => {
 
   // Funkcja wchodzenia do konkretnej lekcji
   const navigateToLesson = (lessonId?: number) => {
-    if (course?.isPurchased || course?.price === 0) {
+    const isInstructor = user && course?.instructor?.userId === user.id;
+    const isAdmin = user && user.role === 'ADMIN';
+    const hasAccess = course?.isPurchased || course?.price === 0 || isInstructor || isAdmin;
+
+    if (hasAccess) {
       const target = lessonId ? `?lessonId=${lessonId}` : '';
       navigate(`/course/${course.id}/learn${target}`);
     } else {
@@ -58,25 +62,32 @@ export const CoursePreview = () => {
 
   if (!course) return <div className="p-8 text-center">Ładowanie...</div>;
 
+  const isInstructor = user && course?.instructor?.userId === user.id;
+  const isAdmin = user && user.role === 'ADMIN';
+  const hasAccess = course?.isPurchased || course?.price === 0 || isInstructor || isAdmin;
+
   return (
     <div className="max-w-4xl px-4 py-8 mx-auto">
       <div className="p-8 mb-8 bg-white border border-gray-200 shadow-sm rounded-xl">
         <h1 className="mb-4 text-3xl font-bold">{course.title}</h1>
+        {course.description && (
+          <p className="mb-6 text-gray-600 leading-relaxed whitespace-pre-wrap">{course.description}</p>
+        )}
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
           <div>
             <span className="block text-sm text-gray-500 uppercase font-bold">Status</span>
-            <span className={`text-xl font-bold ${course.isPurchased ? 'text-green-600' : 'text-blue-600'}`}>
-              {course.isPurchased ? "✅ POSIADANY" : `${course.price} PLN`}
+            <span className={`text-xl font-bold ${hasAccess ? 'text-green-600' : 'text-blue-600'}`}>
+              {hasAccess ? "✅ MASZ DOSTĘP" : `${course.price} PLN`}
             </span>
           </div>
           
           <button 
-            onClick={() => course.isPurchased ? navigateToLesson() : navigate(`/checkout/${course.id}`)}
+            onClick={() => hasAccess ? navigateToLesson() : navigate(`/checkout/${course.id}`)}
             className={`px-8 py-3 font-bold text-white transition rounded-lg ${
-              course.isPurchased ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+              hasAccess ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
-            {course.isPurchased ? 'Zacznij naukę' : 'Kup dostęp'}
+            {hasAccess ? 'Zacznij naukę' : 'Kup dostęp'}
           </button>
         </div>
       </div>
