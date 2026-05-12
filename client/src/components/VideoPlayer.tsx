@@ -17,7 +17,7 @@ export const VideoPlayer = ({ contentPath, videoUrl }: VideoPlayerProps) => {
       setIsLoading(true);
       try {
         const token = localStorage.getItem('jwt_token');
-        const response = await fetch('http://localhost:5000/api/uploads/secure-url', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/uploads/secure-url`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',

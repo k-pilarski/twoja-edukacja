@@ -17,7 +17,7 @@ export const LessonPlayer = () => {
   useEffect(() => {
     if (authLoading) return;
 
-    fetch(`http://localhost:5000/api/courses/${courseId}`, {
+    fetch(`${import.meta.env.VITE_API_URL}/api/courses/${courseId}`, {
       headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     })
       .then(res => res.json())
@@ -47,7 +47,7 @@ export const LessonPlayer = () => {
 
   useEffect(() => {
     if (token) {
-      fetch('http://localhost:5000/api/progress', {
+      fetch(`h${import.meta.env.VITE_API_URL}/api/progress`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       .then(res => res.json())
@@ -64,7 +64,7 @@ export const LessonPlayer = () => {
     if (!token) return;
     setIsLoadingProgress(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/progress/${id}/complete`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/progress/${id}/complete`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

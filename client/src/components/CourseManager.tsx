@@ -22,7 +22,7 @@ export const CourseManager: React.FC = () => {
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/courses', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/courses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ export const CourseManager: React.FC = () => {
       formData.append('file', imageFile);
       
       try {
-        const uploadRes = await fetch('http://localhost:5000/api/uploads', {
+        const uploadRes = await fetch(`${import.meta.env.VITE_API_URL}/api/uploads`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
           body: formData
@@ -78,7 +78,7 @@ export const CourseManager: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/courses/${courseId}/lessons`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/${courseId}/lessons`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -9,7 +9,7 @@ export const Home = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/courses/newest');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/newest`);
         
         if (!response.ok) {
           throw new Error(`Błąd HTTP: ${response.status}`);

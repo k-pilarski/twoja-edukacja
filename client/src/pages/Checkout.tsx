@@ -12,7 +12,7 @@ export const Checkout = () => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/courses/${courseId}`)
+    fetch(`${import.meta.env.VITE_API_URL}/api/courses/${courseId}`)
       .then(res => res.json())
       .then(data => setCourse(data))
       .catch(err => console.error(err));
@@ -26,7 +26,7 @@ export const Checkout = () => {
 
     setIsProcessingPayment(true);
     try {
-      const response = await fetch('http://localhost:5000/api/payments/create-checkout-session', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/create-checkout-session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
