@@ -32,7 +32,7 @@ export const CoursesCatalog: React.FC = () => {
       queryParams.append('page', page.toString());
       queryParams.append('limit', limit.toString());
 
-      const response = await fetch(`http://localhost:5000/api/courses?${queryParams.toString()}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/courses?${queryParams.toString()}`);
       
       if (!response.ok) throw new Error('Nie udało się pobrać kursów.');
       

@@ -18,7 +18,7 @@ export const InstructorDashboard: React.FC = () => {
   const fetchCourses = async () => {
     const token = localStorage.getItem('jwt_token');
     try {
-      const response = await fetch('http://localhost:5000/api/courses/my-courses', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/my-courses`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -42,7 +42,7 @@ export const InstructorDashboard: React.FC = () => {
   const handleTogglePublish = async (courseId: number, currentStatus: boolean) => {
     const token = localStorage.getItem('jwt_token');
     try {
-      const response = await fetch(`http://localhost:5000/api/courses/${courseId}/toggle-publish`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/${courseId}/toggle-publish`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
