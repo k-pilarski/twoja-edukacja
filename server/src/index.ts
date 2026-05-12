@@ -11,13 +11,14 @@ import paymentRoutes from './routes/payment.routes.js';
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
 
+const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+app.use(cors({ origin: clientUrl }));
+
 app.use(express.json());
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', message: 'Serwer działa poprawnie' });
 });
-
-app.use(cors({ origin: 'http://localhost:5173' }));
 
 app.use('/api/auth', authRoutes); 
 app.use('/api/courses', courseRoutes);
