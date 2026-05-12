@@ -12,7 +12,7 @@ export const CoursePreview = () => {
   const fetchCourse = () => {
     console.log("Wysyłam zapytanie o kurs z tokenem:", token ? "TAK" : "NIE");
     
-    fetch(`http://127.0.0.1:5000/api/courses/${id}`, {
+    fetch(`${import.meta.env.VITE_API_URL}/api/courses/${id}`, {
       headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     })
       .then(res => res.json())
@@ -30,7 +30,7 @@ export const CoursePreview = () => {
   useEffect(() => {
     const isSuccess = searchParams.get('success');
     if (isSuccess && token && course) {
-      fetch('http://127.0.0.1:5000/api/payments/academic-success', {
+      fetch(`${import.meta.env.VITE_API_URL}/api/payments/academic-success`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
